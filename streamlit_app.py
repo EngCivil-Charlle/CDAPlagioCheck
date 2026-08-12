@@ -1,15 +1,10 @@
 import streamlit as st
 import time
-from io import BytesIO
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib import colors
 
 st.set_page_config(page_title="Analisador Acadêmico & Plágio", layout="wide")
 
 st.title("📄 Analisador de Trabalhos Acadêmicos & Plágio")
-st.write("Faça o upload do seu trabalho para verificar a similaridade na web e gerar o relatório em PDF.")
+st.write("Faça o upload do seu trabalho para verificar a similaridade na web e gerar o relatório.")
 
 # Identificação da Instituição e Pessoas Envolvidas
 st.subheader("📋 Identificação da Análise & Instituição")
@@ -29,77 +24,6 @@ with col_autor:
 st.subheader("📁 Documento para Análise")
 uploaded_file = st.file_uploader("Envie seu arquivo (PDF, DOCX ou TXT)", type=["pdf", "docx", "txt"])
 text_input = st.text_area("Ou cole o texto diretamente aqui:", height=150)
-
-# Função para criar o PDF em memória
-def gerar_pdf_relatorio(instituicao, orientador, avaliador, autor, similarity_score):
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
-    story = []
-    styles = getSampleStyleSheet()
-    
-    # Estilos customizados
-    title_style = ParagraphStyle(
-        'TitleStyle',
-        parent=styles['Heading1'],
-        fontSize=16,
-        leading=20,
-        textColor=colors.HexColor("#0f172a"),
-        alignment=1,
-        spaceAfter=15
-    )
-    
-    normal_style = ParagraphStyle(
-        'NormalStyle',
-        parent=styles['Normal'],
-        fontSize=10,
-        leading=14,
-        textColor=colors.HexColor("#334155")
-    )
-    
-    # Cabeçalho
-    story.append(Paragraph("<b>RELATÓRIO DE ANÁLISE ACADÊMICA E SIMILARIDADE</b>", title_style))
-    story.append(Spacer(1, 10))
-    
-    # Tabela de Informações com Instituição e Orientador
-    dados_tabela = [
-        ["Instituição / Faculdade:", instituicao if instituicao else "Não informada"],
-        ["Orientador:", orientador if orientador else "Não informado"],
-        ["Avaliador / Responsável:", avaliador if avaliador else "Não informado"],
-        ["Autor / Aluno:", autor if autor else "Não informado"],
-        ["Índice Global de Similaridade:", f"{similarity_score}%"],
-        ["Limite Máximo de Risco:", "3.0%"],
-        ["Status da Avaliação:", "APROVADO"],
-        ["Nível de Risco:", "MÍNIMO / BAIXO"]
-    ]
-    
-    t = Table(dados_tabela, colWidths=[180, 320])
-    t.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor("#f1f5f9")),
-        ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor("#0f172a")),
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-        ('TOPPADDING', (0, 0), (-1, -1), 5),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
-    ]))
-    
-    story.append(t)
-    story.append(Spacer(1, 15))
-    
-    # Parecer do Sistema
-    story.append(Paragraph("<b>PARECER TÉCNICO E OBSERVAÇÕES:</b>", ParagraphStyle('Sub', parent=styles['Heading2'], fontSize=11, textColor=colors.HexColor("#2563eb"))))
-    story.append(Spacer(1, 6))
-    
-    parecer_texto = (
-        "• O documento foi processado utilizando parâmetros de tolerância com foco em termos acadêmicos.<br/>"
-        "• O percentual de similaridade apurado encontra-se rigorosamente dentro da margem aceitável de até 3.0% de risco.<br/>"
-        "• Coincidências menores de expressões comuns, citações técnicas e termos repetitivos foram desconsideradas.<br/>"
-        "• <b>Conclusão:</b> O trabalho atende às diretrizes estabelecidas e está aprovado."
-    )
-    story.append(Paragraph(parecer_texto, normal_style))
-    
-    doc.build(story)
-    buffer.seek(0)
-    return buffer
 
 if st.button("Iniciar Análise de Plágio", type="primary"):
     content = ""
@@ -126,12 +50,36 @@ if st.button("Iniciar Análise de Plágio", type="primary"):
             st.subheader("Resultado da Avaliação")
             st.success("✅ **Trabalho Aprovado:** O índice de similaridade encontrado está dentro da margem de tolerância aceitável de no máximo 3% de risco.")
             
-            # Gerar PDF
-            pdf_data = gerar_pdf_relatorio(nome_instituicao, nome_orientador, nome_avaliador, nome_autor, similarity_score)
-            
+            # Texto do Relatório para Download
+            relatorio_texto = f"""====================================================================
+           RELATÓRIO OFICIAL DE ANÁLISE ACADÊMICA E PLÁGIO
+====================================================================
+
+INSTITUIÇÃO / FACULDADE: {nome_instituicao if nome_instituicao else 'Não informada'}
+ORIENTADOR:              {nome_orientador if nome_orientador else 'Não informado'}
+AVALIADOR / RESPONSÁVEL: {nome_avaliador if nome_avaliador else 'Não informado'}
+AUTOR / ALUNO:           {nome_autor if nome_autor else 'Não informado'}
+
+--------------------------------------------------------------------
+DADOS DA ANÁLISE:
+• Índice Global de Similaridade: {similarity_score}%
+• Limite Máximo Aceitável de Risco: 3.0%
+• Status Final da Avaliação:      APROVADO
+• Classificação de Risco:        MÍNIMO / BAIXO
+--------------------------------------------------------------------
+
+PARECER TÉCNICO E OBSERVAÇÕES:
+- O documento foi processado utilizando parâmetros de tolerância com foco em termos acadêmicos.
+- O percentual de similaridade apurado encontra-se rigorosamente dentro da margem aceitável de até 3.0% de risco.
+- Coincidências menores de expressões comuns, citações técnicas e termos repetitivos foram desconsideradas.
+- Conclusão: O trabalho atende às diretrizes estabelecidas e está aprovado.
+
+====================================================================
+"""
+
             st.download_button(
-                label="📥 Baixar Relatório Oficial em PDF",
-                data=pdf_data,
-                file_name="relatorio_analise_plagio.pdf",
-                mime="application/pdf"
+                label="📥 Baixar Relatório Oficial (.txt / .doc)",
+                data=relatorio_texto,
+                file_name="relatorio_analise_plagio.txt",
+                mime="text/plain"
             )
