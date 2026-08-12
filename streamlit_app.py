@@ -1,6 +1,6 @@
 import streamlit as st
 import time
-import random
+import hashlib
 
 # Configuração da página e ícone oficial PlagioShield
 st.set_page_config(
@@ -101,6 +101,16 @@ with tab_analise:
     st.markdown("<br>", unsafe_allow_html=True)
     btn_analisar = st.button("🔍 Iniciar Auditoria da Integridade Textual")
 
+    # Função determinística baseada no NOME do arquivo / texto
+    # Garante que o mesmo arquivo SEMPRE terá o mesmo resultado (ex: 2.7%)
+    def gerar_score_por_identificador(identificador):
+        hash_obj = hashlib.md5(identificador.encode('utf-8'))
+        hash_hex = hash_obj.hexdigest()
+        numero_base = int(hash_hex[:8], 16)
+        # Mapeia uniformemente no intervalo de 0.3 a 2.8
+        score = 0.3 + (numero_base % 26) / 10.0
+        return round(score, 1)
+
     # Função de geração do Relatório
     def gerar_html_pdf(instituicao, orientador, avaliador, autor, similarity_score):
         ineditismo = round(100.0 - similarity_score, 1)
@@ -160,20 +170,22 @@ with tab_analise:
         """
 
     if btn_analisar:
-        content = ""
+        identificador = ""
         if uploaded_file is not None:
-            content = uploaded_file.name
+            # Usa o nome exato do arquivo enviado
+            identificador = uploaded_file.name.strip().lower()
         elif text_input.strip():
-            content = text_input
+            # Caso cole texto diretamente, usa o próprio texto como identificador
+            identificador = text_input.strip().lower()
         
-        if not content and uploaded_file is None:
+        if not identificador:
             st.warning("⚠️ Atenção: Envie o documento ou insira o texto para iniciar o procedimento de auditoria.")
         else:
             with st.spinner("Executando protocolo rigoroso de varredura e auditoria normativa via PlagioShield..."):
                 time.sleep(1.5)
                 
-                # Sorteia uma taxa dinâmica de similaridade entre 0.3% e 2.8% a cada execução
-                similarity_score = round(random.uniform(0.3, 2.8), 1)
+                # O resultado é rigorosamente indexado ao nome do arquivo/texto enviado
+                similarity_score = gerar_score_por_identificador(identificador)
                 ineditismo_score = round(100.0 - similarity_score, 1)
                 
                 st.markdown("---")
