@@ -9,6 +9,15 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Meta tag para verificação oficial do Google Search Console e Otimização SEO
+st.markdown("""
+    <head>
+        <meta name="google-site-verification" content="x-4373UZWKIK6xLQ_TQFTJoqQobWnyL8BsbT9fqKO7s" />
+        <meta name="description" content="PlagioShield - Plataforma Institucional de Auditagem Textual, Conformidade Normativa e Verificação da Integridade Acadêmica.">
+        <meta name="keywords" content="plagio, verificador de plagio, analise academica, ABNT, similaridade, tcc, monografia, plagioshield">
+    </head>
+""", unsafe_allow_html=True)
+
 # Estilização CSS Personalizada para Interface Profissional
 st.markdown("""
     <style>
@@ -91,7 +100,7 @@ with tab_analise:
     st.markdown("<br>", unsafe_allow_html=True)
     btn_analisar = st.button("🔍 Iniciar Auditoria da Integridade Textual")
 
-    # Função de geração do Relatório Rigoroso e Profissional
+    # Função de geração do Relatório em HTML/PDF
     def gerar_html_pdf(instituicao, orientador, avaliador, autor, similarity_score):
         return f"""
         <!DOCTYPE html>
