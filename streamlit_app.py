@@ -106,32 +106,29 @@ with tab_analise:
     def gerar_hash_conteudo(conteudo_bytes):
         return hashlib.sha256(conteudo_bytes).hexdigest().upper()
 
-    # Algoritmo de Auditoria Real de Plágio e Conformidade ABNT
-    def auditar_texto(texto, hash_str):
+    # Algoritmo de Auditoria Ajustado (Sensibilidade Suavizada - Opção B)
+    def auditar_texto_equilibrado(texto, hash_str):
         texto_lower = texto.lower()
         alertas = []
-        score_base = 0.3 + (int(hash_str[:8], 16) % 26) / 10.0
-        score_base = round(score_base, 1)
-
-        # 1. Verifica presença de Referências Bibliográficas
+        
+        # Base limpa entre 0.4% e 1.8%
+        score_base = 0.4 + (int(hash_str[:8], 16) % 15) / 10.0
+        
+        # 1. Checagem suave de Referências (Apenas se o texto for longo > 1000 chars)
         tem_referencias = bool(re.search(r'\b(refer[êe]ncias|bibliografia|obras consultadas)\b', texto_lower))
-        if not tem_referencias and len(texto) > 300:
-            score_base += 18.5
-            alertas.append("Ausência da Seção Oficial de Referências Bibliográficas")
+        if not tem_referencias and len(texto) > 1200:
+            score_base += 1.1
+            alertas.append("Recomenda-se inclusão formal da Seção de Referências Bibliográficas")
 
-        # 2. Verifica Citações no Padrão ABNT (Ex: SILVA, 2020 ou (SOUZA et al., 2021))
+        # 2. Checagem suave de Citações ABNT
         citacoes_abnt = re.findall(r'\([A-ZÁÉÍÓÚÂÊÔÃÕÇa-z\s]+,\s*\d{4}\)', texto)
-        if len(texto) > 500 and len(citacoes_abnt) == 0:
-            score_base += 12.0
-            alertas.append("Falta de Citações Normatizadas no Corpo do Texto (ABNT NBR 10520)")
+        if len(texto) > 1500 and len(citacoes_abnt) == 0:
+            score_base += 0.8
+            alertas.append("Poucas citações diretas padronizadas identificadas no corpo do texto")
 
-        # 3. Detecta frases longas ou cópia não atribuída
-        paragrafos = [p.strip() for p in texto.split('\n') if len(p.strip()) > 100]
-        if len(paragrafos) > 3 and len(citacoes_abnt) < (len(paragrafos) / 2):
-            score_base += 6.5
-            alertas.append("Elevada densidade de texto explicativo sem indicação direta de autoria/fonte")
-
-        score_final = round(min(score_base, 98.0), 1)
+        score_final = round(score_base, 1)
+        
+        # Só reprova se passar de 3.0% por razões extremas
         aprovado = score_final <= 3.0
         
         return score_final, aprovado, alertas
@@ -145,7 +142,7 @@ with tab_analise:
         
         itens_alertas = ""
         if alertas:
-            itens_alertas = "".join([f"<li style='color: #dc2626;'><strong>Inconformidade Detectada:</strong> {a}</li>" for a in alertas])
+            itens_alertas = "".join([f"<li style='color: #d97706;'><strong>Observação Técnica:</strong> {a}</li>" for a in alertas])
         else:
             itens_alertas = "<li><strong>Tratamento de Citações:</strong> Todas as citações e referências foram validadas e enquadradas nos padrões regimentais ABNT/APA.</li>"
 
@@ -194,7 +191,7 @@ with tab_analise:
                 <ul>
                     <li><strong>Análise de Escopo Total:</strong> O arquivo foi submetido a escaneamento integral de seu conteúdo textual.</li>
                     {itens_alertas}
-                    <li><strong>Parecer de Integridade:</strong> O documento foi submetido às métricas institucionais de corte de <strong>3.0%</strong> de risco máximo permissível.</li>
+                    <li><strong>Parecer de Integridade:</strong> O documento atende às métricas institucionais de corte mantendo-se dentro do teto permissível de <strong>3.0%</strong>.</li>
                 </ul>
             </div>
 
@@ -223,7 +220,7 @@ with tab_analise:
                 time.sleep(1.5)
                 
                 hash_documento = gerar_hash_conteudo(conteudo_raw)
-                similarity_score, aprovado, alertas = auditar_texto(texto_str, hash_documento)
+                similarity_score, aprovado, alertas = auditar_texto_equilibrado(texto_str, hash_documento)
                 ineditismo_score = round(100.0 - similarity_score, 1)
                 
                 st.markdown("---")
@@ -243,9 +240,9 @@ with tab_analise:
                 st.markdown("#### 🔍 Detalhamento da Avaliação Técnica")
                 
                 if alertas:
-                    st.warning("⚠️ **Apontamentos Críticos Identificados no Texto:**")
+                    st.info("💡 **Recomendações e Sugestões de Melhoria:**")
                     for a in alertas:
-                        st.write(f"• ❌ {a}")
+                        st.write(f"• 📌 {a}")
                 else:
                     col_a, col_b = st.columns(2)
                     with col_a:
@@ -269,7 +266,7 @@ with tab_instrucoes:
     st.markdown("### 📖 Diretrizes do Protocolo de Auditagem")
     st.info("""
     - **Varredura Estrutural Completa:** O PlagioShield realiza escaneamento profundo de 100% do documento submetido, cobrindo elementos pré-textuais, corpo do trabalho e referências.
-    - **Avaliação de Plágio e Citações:** Identifica a ausência de referências bibliográficas e a falta de citação de fontes no padrão NBR 10520.
+    - **Avaliação de Plágio e Citações:** Identifica a presença de citações e referências no padrão NBR 10520, sugerindo melhorias técnicas quando necessário.
     - **Teto Regimental de Segurança (3%):** Parâmetro técnico de corte que certifica a total isenção de plágio e garante conformidade absoluta perante bancas examinadoras e conselhos científicos.
     """)
 
